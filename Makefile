@@ -1,5 +1,5 @@
-OBJS = ae.o main.o
-FLAG = -O -g -Wall -DHAVE_KQUEUE
+OBJS = zmalloc.o ae.o main.o
+FLAG = -O -g -Wall -DHAVE_EPOLL
 LIBS =
 BIN = ae
 CC = gcc
