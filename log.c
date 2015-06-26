@@ -1,18 +1,17 @@
 #include <stdio.h>
 #include "log.h"
 
-FILE *logFd = NULL;
 
 static void logFile(char* msg, char* format){
+    FILE *logFd;
     char *str = NULL;
     int len = 0;
+    logFd = fopen("./log", "a");
     if(logFd == NULL){
-        logFd = fopen("./log", "a");
-        if(logFd == NULL){
-            perror("error in log");
-        }
+        perror("error in log");
     }
     fprintf(logFd, format, msg);
+    fclose(logFd);
 }
 
 void info(char* msg){
