@@ -13,10 +13,11 @@
 
 aeFileProc *doWrite(struct aeEventLoop *eventLoop, int client_sk, void *clientData, int mask){
     if(clientData != NULL){
-        char c[16] = {0};
         int len = 0;
-        send(client_sk, clientData, strlen(clientData) + 1, 0);
-        send(client_sk, c, strlen(c), 0);
+        int wrote = send(client_sk, clientData, strlen(clientData) + 1, 0);
+        if(wrote <= 0){
+            aeDeleteFileEvent(eventLoop, client_sk, AE_READABLE);
+        }
         clientData = NULL;
         zfree(clientData);
     }
@@ -29,7 +30,12 @@ aeFileProc *doRead(struct aeEventLoop *el, int client_sk, void *clientData, int 
     buff = (char *)zmalloc(sizeof(char) * 1024);
     memset(buff, 0, 1024);
     length = recv(client_sk, buff, 1024, 0);
-    aeCreateFileEvent(el, client_sk, AE_WRITABLE, doWrite, buff);
+    if(length <= 0){
+            aeDeleteFileEvent(el, client_sk, AE_WRITABLE);
+    }
+    else{
+        aeCreateFileEvent(el, client_sk, AE_WRITABLE, doWrite, buff);
+    }
 }
 
 aeFileProc *doAccept(struct aeEventLoop *el, int server_sk, void *clientData, int mask){
@@ -60,6 +66,7 @@ void forkWorker(aeEventLoop *el, int server_sk){
 }
 
 int main(int argc, char* argv[]){
+    int option;
     int i = 1;
     aeEventLoop *el = aeCreateEventLoop(1024);
 
@@ -81,6 +88,11 @@ int main(int argc, char* argv[]){
 
     if(listen(server_sk, 1) < 0){
         perror("listen");
+    }
+
+    if (setsockopt ( server_sk, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option)  ) < 0)
+    {
+           perror( "setsockopt"  );
     }
 
     /*aeCreateFileEvent(el, server_sk, AE_READABLE, doAccept, NULL);*/
