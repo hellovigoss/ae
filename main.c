@@ -15,7 +15,7 @@ aeFileProc *doWrite(struct aeEventLoop *eventLoop, int client_sk, void *clientDa
     if(clientData != NULL){
         char c[16] = {0};
         int len = 0;
-        send(client_sk, clientData, 1024, 0);
+        send(client_sk, clientData, strlen(clientData) + 1, 0);
         send(client_sk, c, strlen(c), 0);
         clientData = NULL;
         zfree(clientData);
@@ -27,7 +27,7 @@ aeFileProc *doRead(struct aeEventLoop *el, int client_sk, void *clientData, int 
     char *buff;
     int length;
     buff = (char *)zmalloc(sizeof(char) * 1024);
-    memset(buff, sizeof(char), 1024);
+    memset(buff, 0, 1024);
     length = recv(client_sk, buff, 1024, 0);
     aeCreateFileEvent(el, client_sk, AE_WRITABLE, doWrite, buff);
 }
@@ -37,9 +37,11 @@ aeFileProc *doAccept(struct aeEventLoop *el, int server_sk, void *clientData, in
     struct sockaddr_in client_addr;
     socklen_t length = sizeof(client_addr);
     int client_sk = accept(server_sk, (struct sockaddr_in*)&client_addr, &length);
-    aeCreateFileEvent(el, client_sk, AE_READABLE, doRead, clientData);
     if(client_sk < 0){
         perror("client");
+    }
+    if(client_sk > 0){
+        aeCreateFileEvent(el, client_sk, AE_READABLE, doRead, clientData);
     }
 }
 
